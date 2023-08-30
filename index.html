@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Car Trips</title>
+    <style>
+    body {
+        font-family: Arial, sans-serif;
+        background-color: #f4f4f4;
+        margin: 40px;
+    }
+    #carForm {
+        background: #fff;
+        padding: 20px;
+        box-shadow: 0px 0px 10px rgba(0,0,0,0.1);
+        max-width: 400px;
+        margin: auto;
+    }
+    label, select, button {
+        width: 100%;
+        padding: 10px;
+        margin-bottom: 15px;
+        border: 1px solid #ccc;
+        box-sizing: border-box;
+        font-size: 1em;
+    }
+    button {
+        background: #007BFF;
+        color: #fff;
+        border: none;
+        cursor: pointer;
+        transition: background 0.3s;
+    }
+    button:hover {
+        background: #0056b3;
+    }
+    #downloadLink {
+        display: block;
+        text-align: center;
+        margin: 15px 0;
+        color: #007BFF;
+        text-decoration: none;
+    }
+    #startTripBtn, #endTripBtn {
+        width: 48%;
+        display: inline-block;
+    }
+
+    .modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.7);
+        z-index: 9999;
+    }
+
+    .modal-content {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background-color: #fff;
+        padding: 20px;
+        box-shadow: 0px 0px 10px rgba(0,0,0,0.3);
+        max-width: 90%;
+        text-align: center;
+    }
+
+    .modal-content p {
+        font-size: 1.2em;
+        font-weight: bold;
+    }
+
+    .close-modal {
+        display: inline-block;
+        padding: 10px 20px;
+        margin-top: 20px;
+        border: none;
+        background-color: #007BFF;
+        color: #fff;
+        cursor: pointer;
+        transition: background 0.3s;
+    }
+
+    .close-modal:hover {
+        background-color: #0056b3;
+    }
+
+    </style>
+</head>
+<body>
+
+<form id="carForm">
+
+    <label for="name">Name:</label>
+    <select id="name" name="name">
+        <option value="None">None</option>
+        <option value="Hernan">Hernan</option>
+        <option value="Carolina">Carolina</option>
+        <option value="Cristina">Cristina</option>
+        <option value="Johnny R">Johnny R</option>
+        <option value="Jonatan V">Jonatan V</option>
+        <option value="Joanna F">Joanna F</option>
+        <option value="Alex F">Alex F</option>
+        <option value="Juan Parra">Juan Parra</option>
+        <option value="Juan Estrade">Juan Estrade</option>
+        <option value="Sebastian">Sebastian</option>
+
+
+    </select>
+    <label for="carModel">Car Model:</label>
+    <select id="carModel" name="carModel">
+        <option value="None">None</option>
+        <option value="Hyundai Accent">Hyundai Accent</option>
+        <option value="Hyunday Kona">Hyunday Kona</option>
+        <option value="Honda CRV">Honda CRV</option>
+        <option value="Honda Venue">Honda Venue</option>
+        <option value="Honda Van">Honda Van</option>
+        <option value="Libia's Honda Van">Libia's Honda Van</option>
+        <option value="Mario's Honda Van">Mario's Honda Van</option>
+
+    </select>
+    <button type="button" onclick="submitForm()">Submit</button>
+
+
+</form>
+
+<button id="startTripBtn" onclick="startTrip()" style="display:none">Start Trip</button>
+<button id="endTripBtn" onclick="endTrip()" style="display:none">End Trip</button>
+
+<script>
+    function getCurrentLocation() {
+        return new Promise((resolve, reject) => {
+            if (!navigator.geolocation) {
+                reject(new Error("Geolocation is not supported by your browser."));
+            } else {
+                navigator.geolocation.getCurrentPosition(
+                    position => {
+                        resolve({
+                            lat: position.coords.latitude,
+                            lon: position.coords.longitude
+                        });
+                    },
+                    () => {
+                        reject(new Error("Unable to retrieve your location."));
+                    }
+                );
+            }
+        });
+    }
+
+    function getCurrentDateTime() {
+        return new Date().toISOString();
+    }
+
+    function submitForm() {
+        document.getElementById("startTripBtn").style.display = "inline";
+        document.getElementById("endTripBtn").style.display = "inline";
+    }
+
+    async function startTrip() {
+        try {
+            const location = await getCurrentLocation();
+            const name = document.getElementById("name").value;
+            const carModel = document.getElementById("carModel").value;
+            const startTime = getCurrentDateTime();
+
+            const data = {
+                action: "start",
+                name,
+                carModel,
+                startTime,
+                startLocation: `Lat: ${location.lat}, Lon: ${location.lon}`
+            };
+
+            fetch("/appendToSheet", {
+                method: "POST",
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            }).then(response => {
+                alert("Start trip data saved!");
+            });
+
+        } catch (error) {
+            console.error('Error starting trip: ', error);
+            alert("Failed to start the trip.");
+        }
+    }
+
+    async function endTrip() {
+        try {
+            const location = await getCurrentLocation();
+            const endTime = getCurrentDateTime();
+
+            const data = {
+                action: "end",
+                name: document.getElementById("name").value,
+                carModel: document.getElementById("carModel").value,
+                endTime,
+                endLocation: `Lat: ${location.lat}, Lon: ${location.lon}`
+            };
+
+            fetch("/appendToSheet", {
+                method: "POST",
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            }).then(response => {
+                alert("End trip data saved!");
+            });
+
+        } catch (error) {
+            console.error('Error ending trip: ', error);
+            alert("Failed to end the trip.");
+        }
+    }
+
+</script>
+</body>
+</html>
